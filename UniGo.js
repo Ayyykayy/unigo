@@ -26,8 +26,11 @@ const shadow = { shadowColor: '#0E1726', shadowOpacity: 0.08, shadowRadius: 16, 
 const CENTER = { latitude: 16.4419, longitude: 80.6198 }; // ← replace with your campus
 
 // ── Set these before release ──
-const COLLEGE_DOMAIN = 'yourcollege.edu.in';
-const GOOGLE = { androidClientId: 'YOUR_ANDROID_CLIENT_ID', webClientId: 'YOUR_WEB_CLIENT_ID' };
+const COLLEGE_DOMAIN = 'srmap.edu.in';
+const GOOGLE = {
+  androidClientId: '688867477160-hvi68tp8rmqv2cn8fg5k5mjtckgnhbra.apps.googleusercontent.com',
+  webClientId: '688867477160-6c59814ojamjhe819miiukq2tjoomk0j.apps.googleusercontent.com',
+};
 const Auth = createContext(null);
 WebBrowser.maybeCompleteAuthSession();
 
@@ -308,7 +311,10 @@ function Login() {
   const { signIn } = useContext(Auth);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const [, res, prompt] = Google.useAuthRequest(GOOGLE);
+  const [, res, prompt] = Google.useAuthRequest({ ...GOOGLE, selectAccount: true, extraParams: { hd: COLLEGE_DOMAIN } });
+  useEffect(() => {
+    if (res?.type === 'error') setErr('Google sign-in failed: ' + (res.error?.message ?? 'unknown error'));
+  }, [res]);
   useEffect(() => {
     if (res?.type !== 'success') return;
     (async () => {
@@ -316,7 +322,7 @@ function Login() {
       try {
         const r = await fetch('https://www.googleapis.com/userinfo/v2/me', { headers: { Authorization: `Bearer ${res.authentication.accessToken}` } });
         const u = await r.json();
-        if (u.email?.endsWith('@' + COLLEGE_DOMAIN)) signIn({ name: u.name, email: u.email });
+        if (u.email?.toLowerCase().endsWith('@' + COLLEGE_DOMAIN)) signIn({ name: u.name, email: u.email });
         else setErr(`Use your college email ending in @${COLLEGE_DOMAIN}.`);
       } catch { setErr("Couldn't sign in. Check your connection and try again."); }
       setBusy(false);
