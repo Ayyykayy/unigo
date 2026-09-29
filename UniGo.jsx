@@ -10,7 +10,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming, withRepeat,
   withSequence, withDelay, FadeIn, FadeInDown, ZoomIn, Easing,
 } from 'react-native-reanimated';
-import MapView, { Marker } from 'react-native-maps';
+import LeafletMap from './components/LeafletMap';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -23,7 +23,7 @@ const C = { bg: '#FFFFFF', surface: '#F5F7FB', ink: '#0E1726', sub: '#5B677D', l
   blue: '#2350E8', blueSoft: '#E8EEFF', amber: '#FFB81C', ok: '#12A150' };
 const F = { m: 'Figtree_500Medium', b: 'Figtree_700Bold', x: 'Figtree_800ExtraBold' };
 const shadow = { shadowColor: '#0E1726', shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 4 };
-const CENTER = { latitude: 16.4419, longitude: 80.6198 }; // ← replace with your campus
+const CENTER = { latitude: 16.46438, longitude: 80.50702 }; // campus center (for map view)
 
 // ── Set these before release ──
 const COLLEGE_DOMAIN = 'yourcollege.edu.in';
@@ -180,18 +180,7 @@ function Home({ navigation }) {
 }
 
 /* ───────── 3. Campus Map ───────── */
-function Marker2({ p, selected, onPress }) {
-  const y = useSharedValue(0);
-  useEffect(() => { y.value = selected ? withSequence(withTiming(-14, { duration: 140 }), withSpring(0, { damping: 4 })) : 0; }, [selected]);
-  const a = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }, { scale: selected ? 1.15 : 1 }] }));
-  return (
-    <Marker coordinate={{ latitude: p.lat, longitude: p.lng }} onPress={onPress} tracksViewChanges={selected}>
-      <Animated.View style={[s.pin, selected && { backgroundColor: C.blue }, a]}>
-        <Icon name={p.icon} size={18} color={selected ? '#fff' : C.blue} />
-      </Animated.View>
-    </Marker>
-  );
-}
+
 
 function CampusMap({ route }) {
   const [q, setQ] = useState('');
@@ -209,9 +198,7 @@ function CampusMap({ route }) {
   const go = () => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}&travelmode=walking`);
   return (
     <View style={s.fill}>
-      <MapView style={StyleSheet.absoluteFill} initialRegion={{ ...CENTER, latitudeDelta: 0.008, longitudeDelta: 0.008 }} showsUserLocation onPress={() => setSel(null)}>
-        {PLACES.map((p) => <Marker2 key={p.id} p={p} selected={sel === p.id} onPress={() => setSel(p.id)} />)}
-      </MapView>
+      <LeafletMap center={CENTER} places={PLACES} selectedId={sel} onSelect={setSel} onMapPress={() => setSel(null)} />
       <SearchBar value={q} onChange={setQ} placeholder="Search campus" style={s.floatSearch} />
       <Animated.View style={[s.sheet, sheetStyle]}>
         {shown && (<>
